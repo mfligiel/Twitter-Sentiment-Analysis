@@ -12,6 +12,7 @@ from twython import Twython
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer 
 import time
 import json
+import pickle
 
 #bokeh imports
 
@@ -69,24 +70,32 @@ def comp_tweet():
     df_scores.drop('scores', axis=1, inplace=True)
     return df_scores
 
-p=0
-while p < 44:
-    dd = comp_tweet()
-    if p == 0:
-        dd2 = dd.copy()
-        dd2['date'] = pd.to_datetime(dd2['date'])
-    dd['date'] = pd.to_datetime(dd['date'])
-    dd2 = pd.concat([dd2, dd], axis=0)
-    dd2.reset_index(inplace=True, drop=True)
-    dd2.drop_duplicates(inplace=True)
-    time.sleep(30)
-    p += 1
+#p=0
+#while p < 44:
+#    dd = comp_tweet()
+#    if p == 0:
+#        dd2 = dd.copy()
+#        dd2['date'] = pd.to_datetime(dd2['date'])
+#    dd['date'] = pd.to_datetime(dd['date'])
+#    dd2 = pd.concat([dd2, dd], axis=0)
+#    dd2.reset_index(inplace=True, drop=True)
+#    dd2.drop_duplicates(inplace=True)
+#    time.sleep(30)
+#    p += 1
+    
+#pull in data
+dd2 = pickle.load(open(r'C:\Users\matfl\tweetsformonitoring.pkl',"rb"))
 
+#order by date
 dd2.sort_values(by='date', inplace=True)
+#take the relevant variables to track
 varls = ['compound', 'pos', 'neg', 'neu']
+#for each of these, smooth them with a half life
 for i in varls:
     j = i+'2'
     dd2[j] = dd2[i].ewm(halflife = '3 min', times=pd.DatetimeIndex(dd2['date'])).mean()
+    
+    
 # set up plots with bokeh
 
 source = ColumnDataSource(data=dd2)

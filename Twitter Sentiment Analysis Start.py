@@ -18,7 +18,7 @@ import pickle
 
 from bokeh.io import show
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, PreText, Select
+from bokeh.models import ColumnDataSource, PreText, Select, CustomJS
 from bokeh.plotting import figure
 # Enter your keys/secrets as strings in the following fields
 
@@ -97,21 +97,57 @@ for i in varls:
     
     
 # set up plots with bokeh
-
-source = ColumnDataSource(data=dd2)
-source_static = ColumnDataSource(data=dd2)
+#set up data
+data = dd2.loc[:,['date', 'compound2', 'pos2', 'neg2', 'neu2', 'neg2']]
+#the second column will become 'y,' which changes as output.
+data.columns = ['date', 'compound', 'pos', 'neg', 'neu', 'y']
+source = ColumnDataSource(data=data)
+source_static = ColumnDataSource(data=data)
 tools = 'pan,wheel_zoom,xbox_select,reset'
 
 
+
+stats = PreText(text='', width=500)
+select1 = Select(value='neg', options=varls)
+
+#cb = CustomJS(args=dict(source=data.to_dict()), code="""
+#    // tell the glyph which field of the source y should refer to
+#    var data = source.data
+#    var y = data['y']
+#    var p = source[cb_obj.value]
+#    //change each value
+#    for (var i = 0; i < y.length; i++) {
+#        y[i] = p[i]
+#    }
+#
+#
+#    // manually trigger change event to re-render
+#    source.change.emit();
+#""")
+
+
+
+
+
 ts1 = figure(width=900, height=200, tools=tools, x_axis_type='datetime', active_drag="xbox_select")
-ts1.line('date', 'compound2', source=source_static)
-ts1.circle('date', 'compound2', size=1, source=source, color=None, selection_color="orange")
+ts1.line('date', y='y', source=source)
+#ts1.circle('date', 'y', size=1, source=source, color=None, selection_color="orange")
+
+callback = CustomJS(args = dict(ts1=ts1), code =
+            """                
+            ts1.glyph.y = {field: cb_obj.value};
+            ts1.change.emit();
+            """)
+
+select1.js_on_change('value', callback)
+
+
 
 # set up layout
 #widgets = column(ticker1, ticker2, stats)
 #$main_row = row(corr, widgets)
 series = column(ts1) #ts2
-layout = column(series) #main row
+layout = column(series, select1) #main row
 
 # initialize
 show(layout)

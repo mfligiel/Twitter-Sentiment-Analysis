@@ -130,13 +130,12 @@ select1 = Select(value='neg', options=varls)
 
 
 ts1 = figure(width=900, height=200, tools=tools, x_axis_type='datetime', active_drag="xbox_select")
-ts1.line('date', y='y', source=source)
+line_renderer = ts1.line('date', y='y', source=source)
 #ts1.circle('date', 'y', size=1, source=source, color=None, selection_color="orange")
 
-callback = CustomJS(args = dict(ts1=ts1), code =
+callback = CustomJS(args = dict(line_renderer=line_renderer), code =
             """                
-            ts1.glyph.y = {field: cb_obj.value};
-            ts1.change.emit();
+            line_renderer.glyph.y = {field: cb_obj.value};
             """)
 
 select1.js_on_change('value', callback)
